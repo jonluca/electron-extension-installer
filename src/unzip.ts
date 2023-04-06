@@ -70,7 +70,7 @@ async function unzip(crxFilePath: string, destination: string) {
       const directory = (isFile && path.dirname(fullPath)) || fullPath;
       const content = await files[filename].async("nodebuffer");
 
-      await jetpack.dirAsync(directory, { empty: true });
+      await jetpack.dirAsync(directory);
       if (isFile) {
         await jetpack.writeAsync(fullPath, content);
       }

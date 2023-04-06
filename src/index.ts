@@ -83,7 +83,7 @@ export const installExtension = async (
   const { forceDownload, loadExtensionOptions } = options;
 
   if (process.type !== "browser") {
-    return Promise.reject(new Error("electron-devtools-assembler can only be used from the main process"));
+    throw new Error("electron-devtools-assembler can only be used from the main process");
   }
 
   if (Array.isArray(extensionReference)) {
@@ -95,40 +95,33 @@ export const installExtension = async (
     chromeStoreID = extensionReference.id;
     const electronVersion = process.versions.electron.split("-")[0];
     if (!semver.satisfies(electronVersion, extensionReference.electron)) {
-      return Promise.reject(
-        new Error(
-          `Version of Electron: ${electronVersion} does not match required range ${extensionReference.electron} for extension ${chromeStoreID}`,
-        ), // eslint-disable-line
+      throw new Error(
+        `Version of Electron: ${electronVersion} does not match required range ${extensionReference.electron} for extension ${chromeStoreID}`,
       );
     }
   } else if (typeof extensionReference === "string") {
     chromeStoreID = extensionReference;
   } else {
-    return Promise.reject(new Error(`Invalid extensionReference passed in: "${extensionReference}"`));
+    throw new Error(`Invalid extensionReference passed in: "${extensionReference}"`);
   }
 
   const IDMap = getIdMap();
   const extensionName = IDMap[chromeStoreID];
-  const extensionInstalled: boolean =
-    !!extensionName &&
-    session.defaultSession.getAllExtensions().some((e: { name: string }) => e.name === extensionName);
+  // todo - should we check id here?
+  const installedExtension = session.defaultSession.getAllExtensions().find((e) => e.name === extensionName);
 
-  if (!forceDownload && extensionInstalled) {
-    return Promise.resolve(IDMap[chromeStoreID]);
+  if (!forceDownload && installedExtension) {
+    return IDMap[chromeStoreID];
   }
-  return downloadChromeExtension(chromeStoreID, Boolean(forceDownload)).then((extensionFolder) => {
-    // Use forceDownload, but already installed
-    if (extensionInstalled) {
-      const extensionId = session.defaultSession.getAllExtensions().find((e: { name: string }) => e.name)?.id;
-      if (extensionId) {
-        session.defaultSession.removeExtension(extensionId);
-      }
-    }
 
-    return session.defaultSession.loadExtension(extensionFolder, loadExtensionOptions).then((ext: { name: string }) => {
-      return Promise.resolve(ext.name);
-    });
-  });
+  const extensionFolder = await downloadChromeExtension(chromeStoreID, Boolean(forceDownload));
+  // Use forceDownload, but already installed
+  if (installedExtension) {
+    session.defaultSession.removeExtension(installedExtension.id);
+  }
+
+  const ext = await session.defaultSession.loadExtension(extensionFolder, loadExtensionOptions);
+  return ext.name;
 };
 export default installExtension;
 export * from "./extensions";

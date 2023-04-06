@@ -1,0 +1,70 @@
+{
+  "name": "electron-extension-installer",
+  "version": "0.0.0-development",
+  "license": "MIT",
+  "author": "Jonluca DeCaro <electronextension@jonlu.ca>",
+  "description": "Install any extension into electron",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "tsconfig.json",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "keywords": [
+    "electron",
+    "devtools",
+    "react"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonluca/electron-extension-installer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jonluca/electron-extension-installer/issues"
+  },
+  "homepage": "https://github.com/jonluca/electron-extension-installer",
+  "scripts": {
+    "prepublishOnly": "yarn build",
+    "lint": "eslint src",
+    "build": "rm -fr dist/* && tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "prettier": "prettier --write \"**/*.+(js|jsx|ts|tsx|har||json|css|md)\""
+  },
+  "dependencies": {
+    "@types/jszip": "^3.4.1",
+    "@types/semver": "^7.3.13",
+    "fs-jetpack": "^5.1.0",
+    "jszip": "^3.10.1",
+    "rimraf": "^4.4.1",
+    "semver": "^7.3.8"
+  },
+  "devDependencies": {
+    "@types/electron": "^1.6.10",
+    "@types/eslint": "8.37.0",
+    "@types/node": "^18.15.11",
+    "@typescript-eslint/eslint-plugin": "^5.57.1",
+    "@typescript-eslint/eslint-plugin-tslint": "^5.57.1",
+    "@typescript-eslint/parser": "^5.57.1",
+    "eslint": "^8.37.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-unused-imports": "^2.0.0",
+    "lint-staged": "^13.2.0",
+    "prettier": "^2.8.7",
+    "typescript": "5.0.3"
+  },
+  "lint-staged": {
+    "**/*.{js,ts,jsx,tsx}": [
+      "eslint --cache --fix"
+    ],
+    "**/*.{js,ts,jsx,tsx,json,md}": [
+      "prettier --write"
+    ]
+  }
+}

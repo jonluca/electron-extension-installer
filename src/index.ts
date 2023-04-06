@@ -4,9 +4,22 @@ import * as semver from "semver";
 import * as path from "path";
 import * as rimraf from "rimraf";
 import unzip from "./unzip";
-import { changePermissions, downloadFile, getExtensionPath, getIdMap } from "./utils";
+import { changePermissions, fetchCrxFile, getExtensionPath, getIdMap } from "./utils";
 import jetpack from "fs-jetpack";
 
+// These overrides are for extensions whose official CRX file hosted on google uses Chrome APIs unsupported by electron
+// Thankfully collected by @xupea
+const OVERRIDES = [
+  "bhljhndlimiafopmmhjlgfpnnchjjbhd",
+  "bmdblncegkenkacieihfhpjfppoconhi",
+  "dbhhnnnpaeobfddmlalhnehgclcmjimi",
+  "fmkadmapgofadopljbjfkapdkoienihi",
+  "ienfalfjdbdpebioblfackkekamfmbnh",
+  "jdkknkkbebbapilgoeccciglkfbmbnfm",
+  "lmhkpmbekcpmknklioeibfkpmmfibljd",
+  "nhdogjmejiglipccpnnnanhbledajbpd",
+  "pfgnfdagidkfgccljigdamigbcnndkod",
+];
 async function downloadChromeExtension(chromeStoreID: string, forceDownload: boolean, attempts = 5): Promise<string> {
   try {
     const extensionsStore = getExtensionPath();
@@ -17,9 +30,14 @@ async function downloadChromeExtension(chromeStoreID: string, forceDownload: boo
       if (extensionDirExists) {
         rimraf.sync(extensionFolder);
       }
-      const fileURL = `https://clients2.google.com/service/update2/crx?response=redirect&acceptformat=crx2,crx3&x=id%3D${chromeStoreID}%26uc&prodversion=32`;
+      const chromeVersion = process.versions.chrome || 32;
+      let fileURL = `https://clients2.google.com/service/update2/crx?response=redirect&acceptformat=crx2,crx3&x=id%3D${chromeStoreID}%26uc&prodversion=${chromeVersion}`;
+      if (OVERRIDES.includes(chromeStoreID)) {
+        fileURL = `https://github.com/jonluca/electron-extension-installer/raw/main/overrides/${chromeStoreID}.crx`;
+      }
+
       const filePath = path.resolve(`${extensionFolder}.crx`);
-      await downloadFile(fileURL, filePath);
+      await fetchCrxFile(fileURL, filePath);
 
       try {
         await unzip(filePath, extensionFolder);

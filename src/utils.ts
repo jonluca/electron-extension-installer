@@ -7,7 +7,7 @@ export const getExtensionPath = () => {
   return path.resolve(`${savePath}/extensions`);
 };
 
-export const downloadFile = async (from: string, to: string): Promise<void> => {
+export const fetchCrxFile = async (from: string, to: string): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
     const request = net.request(from);
 

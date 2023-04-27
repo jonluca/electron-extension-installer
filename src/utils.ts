@@ -4,7 +4,7 @@ import { app, net } from "electron";
 
 export const getExtensionPath = () => {
   const savePath = app.getPath("userData");
-  return path.resolve(`${savePath}/extensions`);
+  return path.resolve(`${savePath}/chrome-extensions`);
 };
 
 export const fetchCrxFile = async (from: string, to: string): Promise<void> => {

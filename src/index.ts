@@ -1,6 +1,5 @@
 import type { LoadExtensionOptions } from "electron";
 import { session } from "electron";
-import * as semver from "semver";
 import * as path from "path";
 import * as rimraf from "rimraf";
 import unzip from "./unzip";
@@ -69,10 +68,6 @@ export interface ExtensionReference {
    */
   id: string;
   /**
-   * Range of electron versions this extension is supported by
-   */
-  electron: string;
-  /**
    * Working version
    */
   version?: string;
@@ -120,13 +115,6 @@ export const installExtension = async (
   let chromeStoreID: string;
   if (typeof extensionReference === "object" && extensionReference.id) {
     chromeStoreID = extensionReference.id;
-    const electronVersion = process.versions.electron.split("-")[0];
-    const coercedVersion = semver.coerce(electronVersion)!;
-    if (!semver.satisfies(coercedVersion, extensionReference.electron)) {
-      throw new Error(
-        `Version of Electron: ${electronVersion} does not match required range ${extensionReference.electron} for extension ${chromeStoreID}`,
-      );
-    }
   } else if (typeof extensionReference === "string") {
     chromeStoreID = extensionReference;
   } else {

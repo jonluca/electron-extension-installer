@@ -106,7 +106,10 @@ export const installExtension = async (
   extensionReference: ExtensionReference | string | Array<ExtensionReference | string>,
   options: ExtensionOptions = {},
 ): Promise<string | string[]> => {
-  const targetSession = typeof options.session === 'string' ? session.fromPartition(options.session) : options.session || session.defaultSession;
+  const targetSession =
+    typeof options.session === "string"
+      ? session.fromPartition(options.session)
+      : options.session || session.defaultSession;
   const { forceDownload, loadExtensionOptions } = options;
 
   if (process.type !== "browser") {
@@ -129,7 +132,7 @@ export const installExtension = async (
   const IDMap = getIdMap();
   const extensionName = IDMap[chromeStoreID];
   // todo - should we check id here?
-  const installedExtension = targetSession.getAllExtensions().find((e) => e.name === extensionName);
+  const installedExtension = targetSession.extensions.getAllExtensions().find((e) => e.name === extensionName);
 
   if (!forceDownload && installedExtension) {
     return IDMap[chromeStoreID];
@@ -138,7 +141,7 @@ export const installExtension = async (
   const extensionFolder = await downloadChromeExtension(chromeStoreID, Boolean(forceDownload));
   // Use forceDownload, but already installed
   if (installedExtension) {
-    targetSession.removeExtension(installedExtension.id);
+    targetSession.extensions.removeExtension(installedExtension.id);
   }
 
   if (await isManifestVersion3(extensionFolder)) {
@@ -149,7 +152,7 @@ export const installExtension = async (
     https://github.com/MarshallOfSound/electron-devtools-installer/issues/238
     https://github.com/electron/electron/blob/e3b7c3024f6f70155efb1022b691954280f983cb/docs/api/extensions.md#L1`);
   }
-  const ext = await targetSession.loadExtension(extensionFolder, loadExtensionOptions);
+  const ext = await targetSession.extensions.loadExtension(extensionFolder, loadExtensionOptions);
   return ext.name;
 };
 export default installExtension;

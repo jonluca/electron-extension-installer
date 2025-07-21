@@ -2,9 +2,9 @@ import type { LoadExtensionOptions, Session } from "electron";
 import { session } from "electron";
 import * as path from "path";
 import * as rimraf from "rimraf";
+import fs from "fs/promises";
 import unzip from "./unzip";
 import { changePermissions, fetchCrxFile, getExtensionPath, getIdMap } from "./utils";
-import jetpack from "fs-jetpack";
 
 // These overrides are for extensions whose official CRX file hosted on google uses Chrome APIs unsupported by electron
 // Thankfully collected by @xupea
@@ -19,12 +19,33 @@ const OVERRIDES = [
   "nhdogjmejiglipccpnnnanhbledajbpd",
   "pfgnfdagidkfgccljigdamigbcnndkod",
 ];
+
+async function ensureDir(dirPath: string) {
+  try {
+    await fs.mkdir(dirPath, { recursive: true });
+  } catch (error) {
+    // If the directory already exists, that's fine
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+      throw error;
+    }
+  }
+}
+
+async function exists(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function downloadChromeExtension(chromeStoreID: string, forceDownload: boolean, attempts = 5): Promise<string> {
   try {
     const extensionsStore = getExtensionPath();
-    await jetpack.dirAsync(extensionsStore);
+    await ensureDir(extensionsStore);
     const extensionFolder = path.resolve(`${extensionsStore}/${chromeStoreID}`);
-    const extensionDirExists = await jetpack.existsAsync(extensionFolder);
+    const extensionDirExists = await exists(extensionFolder);
     if (!extensionDirExists || forceDownload) {
       if (extensionDirExists) {
         rimraf.sync(extensionFolder);
@@ -43,7 +64,7 @@ async function downloadChromeExtension(chromeStoreID: string, forceDownload: boo
         changePermissions(extensionFolder, 755);
         return extensionFolder;
       } catch (err: any) {
-        if (!(await jetpack.existsAsync(path.resolve(extensionFolder, "manifest.json")))) {
+        if (!(await exists(path.resolve(extensionFolder, "manifest.json")))) {
           throw err;
         }
       }
@@ -90,7 +111,8 @@ export interface ExtensionOptions {
 
 const isManifestVersion3 = async (manifestDirectory: string) => {
   try {
-    const file = await jetpack.readAsync(path.join(manifestDirectory, "manifest.json"), "json");
+    const fileContent = await fs.readFile(path.join(manifestDirectory, "manifest.json"), "utf8");
+    const file = JSON.parse(fileContent);
     return file.manifest_version === 3;
   } catch (e) {
     return false;
@@ -106,7 +128,10 @@ export const installExtension = async (
   extensionReference: ExtensionReference | string | Array<ExtensionReference | string>,
   options: ExtensionOptions = {},
 ): Promise<string | string[]> => {
-  const targetSession = typeof options.session === 'string' ? session.fromPartition(options.session) : options.session || session.defaultSession;
+  const targetSession =
+    typeof options.session === "string"
+      ? session.fromPartition(options.session)
+      : options.session || session.defaultSession;
   const { forceDownload, loadExtensionOptions } = options;
 
   if (process.type !== "browser") {
@@ -129,7 +154,7 @@ export const installExtension = async (
   const IDMap = getIdMap();
   const extensionName = IDMap[chromeStoreID];
   // todo - should we check id here?
-  const installedExtension = targetSession.getAllExtensions().find((e) => e.name === extensionName);
+  const installedExtension = targetSession.extensions.getAllExtensions().find((e) => e.name === extensionName);
 
   if (!forceDownload && installedExtension) {
     return IDMap[chromeStoreID];
@@ -138,7 +163,7 @@ export const installExtension = async (
   const extensionFolder = await downloadChromeExtension(chromeStoreID, Boolean(forceDownload));
   // Use forceDownload, but already installed
   if (installedExtension) {
-    targetSession.removeExtension(installedExtension.id);
+    targetSession.extensions.removeExtension(installedExtension.id);
   }
 
   if (await isManifestVersion3(extensionFolder)) {
@@ -149,7 +174,8 @@ export const installExtension = async (
     https://github.com/MarshallOfSound/electron-devtools-installer/issues/238
     https://github.com/electron/electron/blob/e3b7c3024f6f70155efb1022b691954280f983cb/docs/api/extensions.md#L1`);
   }
-  const ext = await targetSession.loadExtension(extensionFolder, loadExtensionOptions);
+  const ext = await targetSession.extensions.loadExtension(extensionFolder, loadExtensionOptions);
+
   return ext.name;
 };
 export default installExtension;

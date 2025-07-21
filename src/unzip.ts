@@ -1,7 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
 import jszip from "jszip";
-import jetpack from "fs-jetpack";
 
 // Credits for the original function go to Rob--W
 // https://github.com/Rob--W/crxviewer/blob/master/src/lib/crx-to-zip.js
@@ -14,6 +13,7 @@ function calcLength(a: number, b: number, c: number, d: number) {
   length += (d << 24) >>> 0;
   return length;
 }
+
 function crxToZip(buf: Buffer) {
   // 50 4b 03 04
   // This is actually a zip file
@@ -52,6 +52,17 @@ function crxToZip(buf: Buffer) {
   return buf.subarray(zipStartOffset, buf.length);
 }
 
+async function ensureDir(dirPath: string) {
+  try {
+    await fs.mkdir(dirPath, { recursive: true });
+  } catch (error) {
+    // If the directory already exists, that's fine
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+      throw error;
+    }
+  }
+}
+
 async function unzip(crxFilePath: string, destination: string) {
   const filePath = path.resolve(crxFilePath);
   const extname = path.extname(crxFilePath);
@@ -63,6 +74,7 @@ async function unzip(crxFilePath: string, destination: string) {
   const res = await jszip.loadAsync(crxToZip(buf));
   const { files } = res;
   const zipFileKeys = Object.keys(files);
+
   return Promise.all(
     zipFileKeys.map(async (filename) => {
       const isFile = !files[filename].dir;
@@ -70,9 +82,9 @@ async function unzip(crxFilePath: string, destination: string) {
       const directory = (isFile && path.dirname(fullPath)) || fullPath;
       const content = await files[filename].async("nodebuffer");
 
-      await jetpack.dirAsync(directory);
+      await ensureDir(directory);
       if (isFile) {
-        await jetpack.writeAsync(fullPath, content);
+        await fs.writeFile(fullPath, content);
       }
     }),
   );

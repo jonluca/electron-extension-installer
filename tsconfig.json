@@ -9,7 +9,6 @@
     "esModuleInterop": true,
     "inlineSourceMap": false,
     "lib": ["esnext"],
-    "moduleResolution": "node16",
     "noFallthroughCasesInSwitch": true,
     "pretty": true,
     "resolveJsonModule": true,

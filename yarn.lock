@@ -715,9 +715,9 @@ eastasianwidth@^0.2.0:
   integrity sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==
 
 electron@>=36.0.0:
-  version "37.2.3"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-37.2.3.tgz#a4916c591ddae6a2002dbb7f8ddc8e3db96b1f0b"
-  integrity sha512-JRKKn8cRDXDfkC+oWISbYs+c+L6RA776JM0NiB9bn2yV8H/LnBUlVPzKKfsXgrUIokN4YcbCw694vfAdEJwtGw==
+  version "37.3.1"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-37.3.1.tgz#92d0299593c4302dcdf3305af917c60dad69719f"
+  integrity sha512-7DhktRLqhe6OJh/Bo75bTI0puUYEmIwSzMinocgO63mx3MVjtIn2tYMzLmAleNIlud2htkjpsMG2zT4PiTCloA==
   dependencies:
     "@electron/get" "^2.0.0"
     "@types/node" "^22.7.7"

@@ -1,7 +1,6 @@
 import type { LoadExtensionOptions, Session } from "electron";
 import { session } from "electron";
 import * as path from "path";
-import * as rimraf from "rimraf";
 import fs from "fs/promises";
 import unzip from "./unzip";
 import { changePermissions, fetchCrxFile, getExtensionPath, getIdMap } from "./utils";
@@ -48,7 +47,7 @@ async function downloadChromeExtension(chromeStoreID: string, forceDownload: boo
     const extensionDirExists = await exists(extensionFolder);
     if (!extensionDirExists || forceDownload) {
       if (extensionDirExists) {
-        rimraf.sync(extensionFolder);
+        await fs.rm(extensionFolder, { recursive: true, force: true });
       }
       const chromeVersion = process.versions.chrome || 32;
       let fileURL = `https://clients2.google.com/service/update2/crx?response=redirect&acceptformat=crx2,crx3&x=id%3D${chromeStoreID}%26uc&prodversion=${chromeVersion}`;

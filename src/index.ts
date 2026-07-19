@@ -108,16 +108,6 @@ export interface ExtensionOptions {
   session?: string | Session;
 }
 
-const isManifestVersion3 = async (manifestDirectory: string) => {
-  try {
-    const fileContent = await fs.readFile(path.join(manifestDirectory, "manifest.json"), "utf8");
-    const file = JSON.parse(fileContent);
-    return file.manifest_version === 3;
-  } catch (e) {
-    return false;
-  }
-};
-
 /**
  * @param extensionReference Extension or extensions to install
  * @param options Installation options
@@ -165,17 +155,11 @@ export const installExtension = async (
     targetSession.extensions.removeExtension(installedExtension.id);
   }
 
-  if (await isManifestVersion3(extensionFolder)) {
-    throw new Error(`Manifest version 3 is not supported by electron. For more information, see:
-    
-    https://github.com/facebook/react/issues/25843
-    https://github.com/electron/electron/issues/37876
-    https://github.com/MarshallOfSound/electron-devtools-installer/issues/238
-    https://github.com/electron/electron/blob/e3b7c3024f6f70155efb1022b691954280f983cb/docs/api/extensions.md#L1`);
-  }
   const ext = await targetSession.extensions.loadExtension(extensionFolder, loadExtensionOptions);
 
   return ext.name;
 };
 export default installExtension;
 export * from "./extensions";
+
+module.exports = Object.assign(installExtension, module.exports);

@@ -4,20 +4,14 @@ on: [push, pull_request]
 
 jobs:
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ["*"]
-        os: [ubuntu-latest]
-
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - name: Use Node.js 24
+        uses: actions/setup-node@v7
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 24
           cache: "yarn"
 
       - name: Install dependencies

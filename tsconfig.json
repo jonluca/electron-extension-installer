@@ -4,7 +4,6 @@
     "outDir": "dist",
     "target": "es2020",
     "allowSyntheticDefaultImports": true,
-    "baseUrl": "src",
     "declaration": true,
     "esModuleInterop": true,
     "inlineSourceMap": false,

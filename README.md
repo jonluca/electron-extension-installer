@@ -4,7 +4,7 @@
 
 # Introduction
 
-This library is a modernized version of `electron-devtools-installer`. It is tested and works on up to electron v24. Min electron version is v11.
+This library is a modernized version of `electron-devtools-installer` for Electron 36 and newer.
 
 # Getting Started
 

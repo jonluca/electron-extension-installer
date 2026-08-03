@@ -16,15 +16,15 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
-      - run: npm install --global npm@^11.15.0 yarn@1.22.22
+      - run: npm install --global npm@^12.0.2 yarn@1.22.22
       - run: yarn install --frozen-lockfile
       - run: yarn build
-      - run: npx --yes semantic-release@25 --branches main
+      - run: npx --yes semantic-release@25.0.8 --branches main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

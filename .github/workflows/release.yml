@@ -24,6 +24,10 @@ jobs:
           package-manager-cache: false
       - run: npm install --global npm@^12.0.2 yarn@1.22.22
       - run: yarn install --frozen-lockfile
+        env:
+          # setup-node@v7 no longer supplies the placeholder Yarn 1 expects
+          # for the token reference in its generated npm configuration.
+          NODE_AUTH_TOKEN: unused
       - run: yarn build
       - run: npx --yes semantic-release@25.0.8 --branches main
         env:

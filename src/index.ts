@@ -1,69 +1,70 @@
 import type { LoadExtensionOptions, Session } from "electron";
 import { session } from "electron";
-import * as path from "path";
 import fs from "fs/promises";
-import { getExtensionDownloadUrl } from "./download-url";
+import * as path from "path";
+import { getCachedExtensionVersion, isExtensionCacheCurrent, isVersionAtLeast } from "./cache";
+import { getExtensionDownload } from "./download-url";
+import { verifyFileSha256 } from "./integrity";
 import unzip from "./unzip";
-import { changePermissions, fetchCrxFile, getExtensionPath, getIdMap } from "./utils";
+import { changePermissions, fetchCrxFile, getExtensionPath } from "./utils";
 
-async function ensureDir(dirPath: string) {
+async function downloadChromeExtension(
+  chromeStoreID: string,
+  minimumVersion: string | undefined,
+  forceDownload: boolean,
+  attempts = 5,
+): Promise<string> {
+  const extensionsStore = getExtensionPath();
+  const extensionFolder = path.resolve(extensionsStore, chromeStoreID);
+  const filePath = `${extensionFolder}.crx`;
+
   try {
-    await fs.mkdir(dirPath, { recursive: true });
-  } catch (error) {
-    // If the directory already exists, that's fine
-    if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
-      throw error;
-    }
-  }
-}
+    await fs.mkdir(extensionsStore, { recursive: true });
 
-async function exists(filePath: string): Promise<boolean> {
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function downloadChromeExtension(chromeStoreID: string, forceDownload: boolean, attempts = 5): Promise<string> {
-  try {
-    const extensionsStore = getExtensionPath();
-    await ensureDir(extensionsStore);
-    const extensionFolder = path.resolve(`${extensionsStore}/${chromeStoreID}`);
-    const extensionDirExists = await exists(extensionFolder);
-    if (!extensionDirExists || forceDownload) {
-      if (extensionDirExists) {
-        await fs.rm(extensionFolder, { recursive: true, force: true });
-      }
-      const chromeVersion = process.versions.chrome || 32;
-      const fileURL = getExtensionDownloadUrl(chromeStoreID, chromeVersion);
-
-      const filePath = path.resolve(`${extensionFolder}.crx`);
-      await fetchCrxFile(fileURL, filePath);
-
-      try {
-        await unzip(filePath, extensionFolder);
-        changePermissions(extensionFolder, 755);
-        return extensionFolder;
-      } catch (err: any) {
-        if (!(await exists(path.resolve(extensionFolder, "manifest.json")))) {
-          throw err;
-        }
-      }
-    } else {
+    if (!forceDownload && (await isExtensionCacheCurrent(extensionFolder, minimumVersion))) {
       return extensionFolder;
     }
-  } catch (err) {
-    console.log(`Failed to fetch extension, trying ${attempts - 1} more times`);
-    if (attempts <= 1) {
-      throw err;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    return downloadChromeExtension(chromeStoreID, forceDownload, attempts - 1);
-  }
 
-  throw new Error("Failed to fetch extension");
+    await fs.rm(extensionFolder, { recursive: true, force: true });
+
+    const chromeVersion = process.versions.chrome || 32;
+    const download = getExtensionDownload(chromeStoreID, chromeVersion);
+    await fetchCrxFile(download.url, filePath);
+
+    if (download.sha256) {
+      await verifyFileSha256(filePath, download.sha256);
+    }
+
+    await unzip(filePath, extensionFolder);
+
+    const downloadedVersion = await getCachedExtensionVersion(extensionFolder);
+    if (!downloadedVersion) {
+      throw new Error(`Downloaded extension ${chromeStoreID} does not contain a valid manifest version`);
+    }
+    if (minimumVersion && !isVersionAtLeast(downloadedVersion, minimumVersion)) {
+      throw new Error(
+        `Downloaded extension ${chromeStoreID} is version ${downloadedVersion}, below required version ${minimumVersion}`,
+      );
+    }
+
+    changePermissions(extensionFolder, 755);
+    return extensionFolder;
+  } catch (error) {
+    await Promise.allSettled([
+      fs.rm(extensionFolder, { recursive: true, force: true }),
+      fs.rm(filePath, { force: true }),
+    ]);
+
+    if (attempts <= 1) {
+      throw error;
+    }
+
+    console.warn(`Failed to fetch extension, trying ${attempts - 1} more times`);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    return downloadChromeExtension(chromeStoreID, minimumVersion, forceDownload, attempts - 1);
+  } finally {
+    await fs.rm(filePath, { force: true }).catch(() => undefined);
+  }
 }
 
 export interface ExtensionReference {
@@ -72,7 +73,7 @@ export interface ExtensionReference {
    */
   id: string;
   /**
-   * Working version
+   * Minimum working version. Older cached versions are downloaded again.
    */
   version?: string;
 }
@@ -108,40 +109,52 @@ export const installExtension = async (
   const { forceDownload, loadExtensionOptions } = options;
 
   if (process.type !== "browser") {
-    throw new Error("electron-devtools-assembler can only be used from the main process");
+    throw new Error("electron-extension-installer can only be used from the main process");
   }
 
   if (Array.isArray(extensionReference)) {
     const installed = await Promise.all(extensionReference.map((extension) => installExtension(extension, options)));
     return installed.flat();
   }
+
   let chromeStoreID: string;
+  let minimumVersion: string | undefined;
   if (typeof extensionReference === "object" && extensionReference.id) {
     chromeStoreID = extensionReference.id;
+    minimumVersion = extensionReference.version;
   } else if (typeof extensionReference === "string") {
     chromeStoreID = extensionReference;
   } else {
     throw new Error(`Invalid extensionReference passed in: "${extensionReference}"`);
   }
 
-  const IDMap = getIdMap();
-  const extensionName = IDMap[chromeStoreID];
-  // todo - should we check id here?
-  const installedExtension = targetSession.extensions.getAllExtensions().find((e) => e.name === extensionName);
-
-  if (!forceDownload && installedExtension) {
-    return IDMap[chromeStoreID];
+  const extensionFolder = path.resolve(getExtensionPath(), chromeStoreID);
+  const installedExtension =
+    targetSession.extensions.getExtension(chromeStoreID) ||
+    targetSession.extensions.getAllExtensions().find((extension) => path.resolve(extension.path) === extensionFolder);
+  if (
+    !forceDownload &&
+    installedExtension &&
+    (!minimumVersion || isVersionAtLeast(installedExtension.version, minimumVersion))
+  ) {
+    return installedExtension.name;
   }
 
-  const extensionFolder = await downloadChromeExtension(chromeStoreID, Boolean(forceDownload));
-  // Use forceDownload, but already installed
+  await downloadChromeExtension(chromeStoreID, minimumVersion, Boolean(forceDownload));
   if (installedExtension) {
     targetSession.extensions.removeExtension(installedExtension.id);
   }
 
-  const ext = await targetSession.extensions.loadExtension(extensionFolder, loadExtensionOptions);
+  const extension = await targetSession.extensions.loadExtension(extensionFolder, loadExtensionOptions);
+  if (minimumVersion && !isVersionAtLeast(extension.version, minimumVersion)) {
+    targetSession.extensions.removeExtension(extension.id);
+    await fs.rm(extensionFolder, { recursive: true, force: true });
+    throw new Error(
+      `Loaded extension ${chromeStoreID} is version ${extension.version}, below required version ${minimumVersion}`,
+    );
+  }
 
-  return ext.name;
+  return extension.name;
 };
 export default installExtension;
 export * from "./extensions";

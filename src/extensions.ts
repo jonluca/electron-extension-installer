@@ -6,7 +6,7 @@ export const EMBER_INSPECTOR: ExtensionReference = {
 };
 export const REACT_DEVELOPER_TOOLS: ExtensionReference = {
   id: "fmkadmapgofadopljbjfkapdkoienihi",
-  version: "4.27.3",
+  version: "4.27.1",
 };
 export const BACKBONE_DEBUGGER: ExtensionReference = {
   id: "bhljhndlimiafopmmhjlgfpnnchjjbhd",

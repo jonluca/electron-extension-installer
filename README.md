@@ -31,3 +31,7 @@ app.on("ready", async () => {
   });
 });
 ```
+
+Built-in extension references include a minimum working version. Cached extensions older than that version are
+downloaded again automatically; pass `forceDownload: true` to refresh an extension regardless of its cached version.
+Compatibility override files are pinned to an immutable repository revision and verified with SHA-256 before loading.

@@ -57,7 +57,7 @@ export const getIdMap = () => {
   if (fs.existsSync(getIDMapPath())) {
     try {
       return JSON.parse(fs.readFileSync(getIDMapPath(), "utf8"));
-    } catch (err) {
+    } catch {
       console.error("electron-devtools-assembler: Invalid JSON present in the IDMap file");
     }
   }

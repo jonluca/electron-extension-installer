@@ -22,5 +22,7 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
+      - run: yarn lint
+      - run: yarn fmt:check
       - run: yarn typecheck
       - run: yarn test

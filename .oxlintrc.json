@@ -1,0 +1,35 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error"
+  },
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "node": true
+  },
+  "options": {
+    "maxWarnings": 0
+  },
+  "plugins": ["typescript"],
+  "rules": {
+    "curly": ["error", "all"],
+    "no-case-declarations": "off",
+    "object-shorthand": "error",
+    "prefer-const": "error",
+    "typescript/ban-ts-comment": "off",
+    "typescript/consistent-type-definitions": ["error", "interface"],
+    "typescript/consistent-type-imports": ["error", { "prefer": "type-imports" }],
+    "typescript/no-explicit-any": "off",
+    "typescript/no-non-null-assertion": "off",
+    "typescript/no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "ignoreRestSiblings": true,
+        "varsIgnorePattern": "^_"
+      }
+    ],
+    "typescript/no-use-before-define": "warn"
+  }
+}

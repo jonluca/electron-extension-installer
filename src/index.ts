@@ -2,22 +2,9 @@ import type { LoadExtensionOptions, Session } from "electron";
 import { session } from "electron";
 import * as path from "path";
 import fs from "fs/promises";
+import { getExtensionDownloadUrl } from "./download-url";
 import unzip from "./unzip";
 import { changePermissions, fetchCrxFile, getExtensionPath, getIdMap } from "./utils";
-
-// These overrides are for extensions whose official CRX file hosted on google uses Chrome APIs unsupported by electron
-// Thankfully collected by @xupea
-const OVERRIDES = [
-  "bhljhndlimiafopmmhjlgfpnnchjjbhd",
-  "bmdblncegkenkacieihfhpjfppoconhi",
-  "dbhhnnnpaeobfddmlalhnehgclcmjimi",
-  "fmkadmapgofadopljbjfkapdkoienihi",
-  "ienfalfjdbdpebioblfackkekamfmbnh",
-  "jdkknkkbebbapilgoeccciglkfbmbnfm",
-  "lmhkpmbekcpmknklioeibfkpmmfibljd",
-  "nhdogjmejiglipccpnnnanhbledajbpd",
-  "pfgnfdagidkfgccljigdamigbcnndkod",
-];
 
 async function ensureDir(dirPath: string) {
   try {
@@ -50,10 +37,7 @@ async function downloadChromeExtension(chromeStoreID: string, forceDownload: boo
         await fs.rm(extensionFolder, { recursive: true, force: true });
       }
       const chromeVersion = process.versions.chrome || 32;
-      let fileURL = `https://clients2.google.com/service/update2/crx?response=redirect&acceptformat=crx2,crx3&x=id%3D${chromeStoreID}%26uc&prodversion=${chromeVersion}`;
-      if (OVERRIDES.includes(chromeStoreID)) {
-        fileURL = `https://github.com/jonluca/electron-extension-installer/raw/main/overrides/${chromeStoreID}.crx`;
-      }
+      const fileURL = getExtensionDownloadUrl(chromeStoreID, chromeVersion);
 
       const filePath = path.resolve(`${extensionFolder}.crx`);
       await fetchCrxFile(fileURL, filePath);

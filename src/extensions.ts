@@ -26,7 +26,7 @@ export const VUEJS_DEVTOOLS: ExtensionReference = {
 };
 export const REDUX_DEVTOOLS: ExtensionReference = {
   id: "lmhkpmbekcpmknklioeibfkpmmfibljd",
-  version: "3.0.19",
+  version: "3.2.10",
 };
 export const APOLLO_DEVELOPER_TOOLS: ExtensionReference = {
   id: "jdkknkkbebbapilgoeccciglkfbmbnfm",

@@ -15,21 +15,15 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    env:
-      # setup-node@v7 no longer supplies the non-secret placeholder Yarn 1
-      # expects for the token reference in its generated npm configuration.
-      # npm publishing still authenticates through GitHub OIDC.
-      NODE_AUTH_TOKEN: unused
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: pnpm/setup@v1
         with:
-          node-version: 24
-          registry-url: https://registry.npmjs.org
-          package-manager-cache: false
-      - run: npm install --global npm@^12.0.2 yarn@1.22.22
-      - run: yarn install --frozen-lockfile
-      - run: yarn build
+          runtime: node@24
+          install: false
+      - run: npm install --global npm@^12.0.2
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
       - run: npx --yes semantic-release@25.0.8 --branches main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

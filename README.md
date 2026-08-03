@@ -9,7 +9,7 @@ This library is a modernized version of `electron-devtools-installer` for Electr
 # Getting Started
 
 ```
-yarn add electron-extension-installer
+pnpm add electron-extension-installer
 ```
 
 or

@@ -8,15 +8,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-      - name: Use Node.js 24
-        uses: actions/setup-node@v7
+      - name: Use Node.js 24 and pnpm
+        uses: pnpm/setup@v1
         with:
-          node-version: 24
-          cache: "yarn"
+          runtime: node@24
+          cache: true
+          install: false
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
-      - run: yarn lint
-      - run: yarn fmt:check
-      - run: yarn typecheck
-      - run: yarn test
+        run: pnpm install --frozen-lockfile
+      - run: pnpm run lint
+      - run: pnpm run fmt:check
+      - run: pnpm run typecheck
+      - run: pnpm test

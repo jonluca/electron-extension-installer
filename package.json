@@ -27,11 +27,11 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prepublishOnly": "yarn build",
+    "prepublishOnly": "pnpm run build",
     "lint": "oxlint src",
     "lint:fix": "oxlint --fix src",
     "build": "rimraf dist/* && tsc -p tsconfig.json",
-    "test": "yarn build && node --test tests/*.test.cjs",
+    "test": "pnpm run build && node --test tests/*.test.cjs",
     "typecheck": "tsc --noEmit",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check"
@@ -50,5 +50,5 @@
   "peerDependencies": {
     "electron": ">=36.0.0"
   },
-  "packageManager": "yarn@1.22.22"
+  "packageManager": "pnpm@11.18.0"
 }

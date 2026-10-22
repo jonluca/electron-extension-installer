@@ -8,10 +8,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-      - name: Use Node.js 24 and pnpm
+      - name: Use Node.js 26 and pnpm
         uses: pnpm/setup@v1
         with:
-          runtime: node@24
+          runtime: node@26.12.1
           cache: true
           install: false
 
